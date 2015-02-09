@@ -186,11 +186,12 @@ class PyMataCommandHandler(threading.Thread):
     # the stepper library version number.
     stepper_library_version = 0
 
-    def __init__(self, pymata):
+    def __init__(self, pymata, verbose=True):
         """
         constructor for CommandHandler class
         @param pymata: A reference to the pymata instance.
         """
+        self.verbose = verbose
 
         # reference pointer to pymata
         self.pymata = pymata
@@ -237,7 +238,8 @@ class PyMataCommandHandler(threading.Thread):
             self.send_sysex(self.ANALOG_MAPPING_QUERY, None)
             time.sleep(.1)
             #time.sleep(3)
-        print("Board initialized in %d seconds" % (time.time() - start_time))
+        if self.verbose:
+            print("Board initialized in %d seconds" % (time.time() - start_time))
 
         for pin in self.analog_mapping_query_results:
             self.total_pins_discovered += 1
@@ -245,8 +247,9 @@ class PyMataCommandHandler(threading.Thread):
             if pin != self.pymata.IGNORE:
                 self.number_of_analog_pins_discovered += 1
 
-        print('Total Number of Pins Detected = %d' % self.total_pins_discovered)
-        print('Total Number of Analog Pins Detected = %d' % self.number_of_analog_pins_discovered)
+        if self.verbose:
+            print('Total Number of Pins Detected = %d' % self.total_pins_discovered)
+            print('Total Number of Analog Pins Detected = %d' % self.number_of_analog_pins_discovered)
 
         # response table initialization
         # for each pin set the mode to input and the last read data value to zero

@@ -101,7 +101,7 @@ class PyMata:
                                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
 
     # noinspection PyPep8Naming
-    def __init__(self, port_id='/dev/ttyACM0', bluetooth=True):
+    def __init__(self, port_id='/dev/ttyACM0', bluetooth=True, verbose=True):
         """
         The "constructor" instantiates the entire interface. It starts the operational threads for the serial
         interface as well as for the command handler.
@@ -113,11 +113,15 @@ class PyMata:
 
         try:
 
-            print("\nPython Version %s" % sys.version)
-            print('\nPyMata version 2.04   Copyright(C) 2013-15 Alan Yorinks    All rights reserved.')
+            self.verbose = verbose
+
+            if self.verbose:
+                print("\nPython Version %s" % sys.version)
+                print('\nPyMata version 2.04   Copyright(C) 2013-15 Alan Yorinks    All rights reserved.')
 
             # Instantiate the serial support class
-            self.transport = PyMataSerial(port_id, self.command_deque)
+            self.transport = PyMataSerial(port_id, self.command_deque,
+                    verbose=self.verbose)
 
             # wait for HC-06 Bluetooth slave to initialize in case it is being used.
             if bluetooth:
@@ -137,7 +141,7 @@ class PyMata:
             self.transport.start()
 
             # Instantiate the command handler
-            self._command_handler = PyMataCommandHandler(self)
+            self._command_handler = PyMataCommandHandler(self, verbose=self.verbose)
             self._command_handler.system_reset()
 
             ########################################################################
@@ -182,12 +186,14 @@ class PyMata:
             # Command handler should now be prepared to receive replies from the Arduino, so go ahead
             # detect the Arduino board
 
-            print('Please wait while Arduino is being detected. This can take up to 30 seconds ...')
+            if self.verbose:
+                print('Please wait while Arduino is being detected. This can take up to 30 seconds ...')
 
             # perform board auto discovery
             if not self._command_handler.auto_discover_board():
                 # board was not found so shutdown
-                print("Board Auto Discovery Failed!, Shutting Down")
+                if self.verbose:
+                    print("Board Auto Discovery Failed!, Shutting Down")
                 self._command_handler.stop()
                 self.transport.stop()
                 self._command_handler.join()
@@ -195,7 +201,8 @@ class PyMata:
                 time.sleep(2)
 
         except KeyboardInterrupt:
-            print("Program Aborted Before PyMata Instantiated")
+            if self.verbose:
+                print("Program Aborted Before PyMata Instantiated")
             sys.exit()
 
     def analog_mapping_query(self):
@@ -249,7 +256,8 @@ class PyMata:
         self.transport.stop()
         self.transport.close()
 
-        print("PyMata close(): Calling sys.exit(0): Hope to see you soon!")
+        if self.verbose:
+            print("PyMata close(): Calling sys.exit(0): Hope to see you soon!")
         sys.exit(0)
 
     def digital_read(self, pin):
@@ -479,8 +487,9 @@ class PyMata:
 
         while self._command_handler.stepper_library_version <= 0:
             if time.time() - start_time > timeout:
-                print("Stepper Library Version Request timed-out. "
-                      "Did you send a stepper_request_library_version command?")
+                if self.verbose:
+                    print("Stepper Library Version Request timed-out. "
+                          "Did you send a stepper_request_library_version command?")
                 return
             else:
                 pass
@@ -757,7 +766,8 @@ class PyMata:
         self.set_pin_mode(echo_pin, self.SONAR, self.INPUT)
         # update the ping data map for this pin
         if len(self._command_handler.active_sonar_map) > 6:
-            print("sonar_config: maximum number of devices assigned - ignoring request")
+            if self.verbose:
+                print("sonar_config: maximum number of devices assigned - ignoring request")
             return
         else:
             with self.data_lock:

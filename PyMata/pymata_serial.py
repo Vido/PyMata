@@ -39,13 +39,14 @@ class PyMataSerial(threading.Thread):
     timeout = 1
     command_deque = None
 
-    def __init__(self, port_id, command_deque):
+    def __init__(self, port_id, command_deque, verbose=True):
         """
         Constructor:
         @param command_deque: A reference to the deque shared with the _command_handler
         """
         self.port_id = port_id
         self.command_deque = command_deque
+        self.verbose = verbose
 
         threading.Thread.__init__(self)
         self.daemon = True
@@ -70,8 +71,8 @@ class PyMataSerial(threading.Thread):
         open the serial port using the configuration data
         returns a reference to this instance
         """
-        # open a serial port
-        print('\nOpening Arduino Serial port %s ' % self.port_id)
+        if self.verbose:
+            print('\nOpening Arduino Serial port %s ' % self.port_id)
 
         try:
 
